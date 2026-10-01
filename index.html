@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Turno — Demo MVP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ---------- Tokens ---------- */
+:root{
+  --acero:#DDE1E4; --papel:#FBFAF7; --papel2:#EFEEE9; --tinta:#131C25; --muted:#586571; --line:#C3CAD0;
+  --cobalto:#2547E0; --on-cobalto:#FFFFFF; --cobalto-soft:#E3E9FD;
+  --p1:#7B8794; --p2:#3F7FBF; --p3:#BF8600; --p4:#E4570B; --p5:#D4202F;
+  --on-p1:#FFFFFF; --on-p2:#FFFFFF; --on-p3:#161200; --on-p4:#FFFFFF; --on-p5:#FFFFFF;
+  --ok:#1F7A4D; --on-ok:#FFFFFF; --late:#B3121F; --shadow:rgba(19,28,37,.28);
+  --font-display:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --font-body:'Public Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --acero:#0F1316; --papel:#1B2227; --papel2:#252D33; --tinta:#E9EEF1; --muted:#9BA8B3; --line:#33404A;
+    --cobalto:#8CA0FF; --on-cobalto:#0A1033; --cobalto-soft:#1E2748;
+    --p1:#8D99A6; --p2:#5F9AD8; --p3:#E0A81A; --p4:#FF7A33; --p5:#FF5560;
+    --on-p1:#0E1317; --on-p2:#07121E; --on-p3:#1A1300; --on-p4:#1F0A00; --on-p5:#2A0005;
+    --ok:#4CC38A; --on-ok:#06180F; --late:#FF7B84; --shadow:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --acero:#0F1316; --papel:#1B2227; --papel2:#252D33; --tinta:#E9EEF1; --muted:#9BA8B3; --line:#33404A;
+  --cobalto:#8CA0FF; --on-cobalto:#0A1033; --cobalto-soft:#1E2748;
+  --p1:#8D99A6; --p2:#5F9AD8; --p3:#E0A81A; --p4:#FF7A33; --p5:#FF5560;
+  --on-p1:#0E1317; --on-p2:#07121E; --on-p3:#1A1300; --on-p4:#1F0A00; --on-p5:#2A0005;
+  --ok:#4CC38A; --on-ok:#06180F; --late:#FF7B84; --shadow:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+
+/* ---------- Base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+html.lock{overflow:hidden}
+body{margin:0;background:var(--acero);color:var(--tinta);font:400 15px/1.5 var(--font-body);min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--cobalto);outline-offset:2px}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+main.wrap{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+h1{font:700 38px/1 var(--font-display);margin:22px 0 8px;letter-spacing:.005em}
+h2{font:600 25px/1.1 var(--font-display);margin:28px 0 10px}
+h3{margin:0}
+p{margin:0}
+.lead{color:var(--muted);margin:0 0 16px;max-width:60ch}
+.muted{color:var(--muted)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Header ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--acero);border-bottom:1px solid var(--line)}
+.top .wrap{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px 10px;padding-top:10px;padding-bottom:10px}
+.brand{display:flex;align-items:baseline;gap:8px}
+.brand b{font:700 30px/1 var(--font-display);letter-spacing:.01em}
+.brand span{font-size:13px;color:var(--muted)}
+.clock{display:flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1.5px solid var(--tinta);border-radius:6px;background:var(--papel);font-weight:600;font-variant-numeric:tabular-nums}
+.clock small{font-weight:500;color:var(--muted);font-size:12.5px}
+.av{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--tinta);color:var(--papel);font:600 20px/1 var(--font-display);border:0;flex:none}
+.spc{grid-column:1/-1;min-width:0}
+.spc select{width:100%}
+.spname{display:flex;align-items:center;gap:8px;font-weight:600;min-height:28px}
+
+/* ---------- Controls ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border:1.5px solid var(--tinta);border-radius:6px;background:transparent;font-weight:600;font-size:15px;text-align:center}
+.btn.sm{min-height:40px;padding:0 14px;font-size:14px}
+.btn.primary{background:var(--cobalto);border-color:var(--cobalto);color:var(--on-cobalto)}
+.btn.danger{background:var(--p5);border-color:var(--p5);color:var(--on-p5)}
+.btn.block{width:100%}
+.btn[aria-disabled="true"]{opacity:.55}
+label.btn:focus-within{outline:3px solid var(--cobalto);outline-offset:2px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+input[type=text],input[type=number],select,textarea{width:100%;min-height:46px;padding:10px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--papel);color:var(--tinta);font:inherit;font-size:16px}
+textarea{resize:vertical}
+.field{margin:0 0 18px}
+.field>label,.field>.lbl{display:block;font-weight:600;margin-bottom:6px}
+.field .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{color:var(--muted);font-size:13.5px;margin-top:6px}
+.err{color:var(--late);font-weight:600;margin-top:6px;font-size:14px}
+.req{color:var(--late);font-weight:600;font-size:13.5px;margin-left:6px}
+.check{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0}
+.check input{width:22px;height:22px;accent-color:var(--cobalto);flex:none;margin:1px 0 0}
+.seg{display:grid;gap:6px}
+.seg.five{grid-template-columns:repeat(5,1fr)}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg button{min-height:52px;border:1.5px solid var(--line);border-radius:6px;background:var(--papel);font-weight:600}
+.seg.five button{font:700 28px/1 var(--font-display)}
+.seg button.on{background:var(--tinta);color:var(--papel);border-color:var(--tinta)}
+.seg.five button.on.p1{background:var(--p1);border-color:var(--p1);color:var(--on-p1)}
+.seg.five button.on.p2{background:var(--p2);border-color:var(--p2);color:var(--on-p2)}
+.seg.five button.on.p3{background:var(--p3);border-color:var(--p3);color:var(--on-p3)}
+.seg.five button.on.p4{background:var(--p4);border-color:var(--p4);color:var(--on-p4)}
+.seg.five button.on.p5{background:var(--p5);border-color:var(--p5);color:var(--on-p5)}
+.filters{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin:0 -16px;padding-left:16px;padding-right:16px}
+.filters button{white-space:nowrap;min-height:40px;padding:0 14px;border:1.5px solid var(--line);border-radius:6px;background:var(--papel);font-weight:600;font-size:14px}
+.filters button.on{background:var(--tinta);color:var(--papel);border-color:var(--tinta)}
+.area-sel{margin-bottom:14px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:500;padding:2px 8px;border-radius:3px;background:var(--papel2);color:var(--muted)}
+.chip.auto{background:var(--cobalto-soft);color:var(--cobalto)}
+.chip.on{background:var(--ok);color:var(--on-ok)}
+.chip.warn{background:var(--p4);color:var(--on-p4)}
+.chip.late{background:var(--p5);color:var(--on-p5)}
+
+/* ---------- Heat bar ---------- */
+.heat{display:flex;gap:2px;height:38px;border-radius:4px;overflow:hidden;background:var(--line)}
+.heat span{display:grid;place-items:center;min-width:30px;font:700 20px/1 var(--font-display)}
+.heat .p1{background:var(--p1);color:var(--on-p1)}.heat .p2{background:var(--p2);color:var(--on-p2)}
+.heat .p3{background:var(--p3);color:var(--on-p3)}.heat .p4{background:var(--p4);color:var(--on-p4)}
+.heat .p5{background:var(--p5);color:var(--on-p5)}
+.heat-cap{margin:8px 0 16px;color:var(--muted)}
+
+/* ---------- Ticket rail ---------- */
+.rail{height:10px;border-radius:5px;margin:4px 0 0;background:linear-gradient(#9aa4ab,#e7ebee 45%,#7f8a92);box-shadow:0 1px 2px var(--shadow)}
+.tk-wrap{margin:0 10px 16px;filter:drop-shadow(0 1px 1.5px var(--shadow))}
+.rail + .tk-wrap{margin-top:0}
+.ticket{
+  --teeth:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6'%3E%3Cpolygon points='0,0 12,0 6,6'/%3E%3C/svg%3E");
+  display:grid;grid-template-columns:72px 1fr;background:var(--papel);padding-bottom:6px;cursor:pointer;
+  -webkit-mask:linear-gradient(#000,#000) 0 0/100% calc(100% - 5px) no-repeat, var(--teeth) 0 100%/12px 6px repeat-x;
+  mask:linear-gradient(#000,#000) 0 0/100% calc(100% - 5px) no-repeat, var(--teeth) 0 100%/12px 6px repeat-x;
+}
+.tk-prio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px;text-align:center}
+.tk-prio b{font:700 50px/.85 var(--font-display)}
+.tk-prio small{font-size:12px;line-height:1.15;font-weight:600}
+.ticket.p1 .tk-prio{background:var(--p1);color:var(--on-p1)}
+.ticket.p2 .tk-prio{background:var(--p2);color:var(--on-p2)}
+.ticket.p3 .tk-prio{background:var(--p3);color:var(--on-p3)}
+.ticket.p4 .tk-prio{background:var(--p4);color:var(--on-p4)}
+.ticket.p5 .tk-prio{background:var(--p5);color:var(--on-p5)}
+.ticket.done .tk-prio{background:var(--ok);color:var(--on-ok)}
+.tk-main{padding:12px 14px;min-width:0}
+.tk-main h3{font:600 23px/1.08 var(--font-display);margin-bottom:6px}
+.tk-title{background:none;border:0;padding:0;text-align:left;font:inherit;color:inherit}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tk-due{font-weight:600}
+.tk-due.late{color:var(--late)}
+.tk-who{color:var(--muted);font-size:14px}
+.running{font-weight:600;color:var(--cobalto);margin-top:6px}
+
+/* ---------- Lists ---------- */
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.row{display:flex;gap:12px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line)}
+.grow{flex:1;min-width:0;display:flex;flex-direction:column}
+.rt{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13.5px}
+.login-row{width:100%;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;padding:12px 2px}
+.login-title{font:700 72px/.9 var(--font-display);margin:34px 0 10px;letter-spacing:.005em}
+.empty{padding:26px 4px}
+.empty b{font:600 24px/1.1 var(--font-display);display:block;margin-bottom:6px}
+.empty p{color:var(--muted);max-width:46ch}
+.shift{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-left:5px solid var(--line);background:var(--papel);margin:0 0 16px}
+.shift.on{border-left-color:var(--ok)}
+.shift>div{display:flex;flex-direction:column}
+.crit{border-left:5px solid var(--p5);background:var(--papel);padding:10px 14px;margin:0 0 16px;font-weight:600}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:grid;grid-template-columns:50px 1fr;gap:8px;padding:7px 0 7px 10px;border-left:3px solid var(--line);margin-bottom:2px}
+.log time{font-weight:600;font-variant-numeric:tabular-nums}
+.log .ev-escalate{border-left-color:var(--p4)}
+.log .ev-auto{border-left-color:var(--cobalto)}
+.log .ev-done{border-left-color:var(--ok)}
+.log .ev-recur{border-left-color:var(--cobalto)}
+
+/* ---------- Recipes ---------- */
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps>li{counter-increment:s;display:grid;grid-template-columns:36px 1fr;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.steps>li::before{content:counter(s);font:700 28px/1 var(--font-display);color:var(--muted)}
+.steps>li.done{opacity:.55}
+.steps>li.done .st-text{text-decoration:line-through}
+.st-text{font-size:16px;margin-bottom:6px}
+.st-ck{background:none;border:0;padding:0;text-align:left;font:inherit;color:inherit;width:100%}
+.tm{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;margin-top:10px;padding:10px 12px;background:var(--papel)}
+.tm-l{display:flex;flex-direction:column}
+.tm-l b{font:700 34px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.tm-l span{color:var(--muted);font-size:14px}
+.tm-bar{grid-column:1/-1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.tm-bar i{display:block;height:100%;width:0;background:var(--cobalto)}
+.ing{margin:0 0 6px;padding-left:20px}
+.ing li{margin-bottom:2px}
+
+/* ---------- Tab bar ---------- */
+.tabs{position:fixed;left:0;right:0;bottom:0;max-width:640px;margin:0 auto;z-index:30;display:grid;grid-template-columns:repeat(var(--n),1fr);background:var(--papel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 2px 8px;background:none;border:0;color:var(--muted);font-size:12px;font-weight:600}
+.tabs button.on{color:var(--cobalto)}
+.tabs button.on::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;background:var(--cobalto)}
+.tabs .bd{position:absolute;top:4px;left:calc(50% + 8px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--p5);color:var(--on-p5);font-size:11px;line-height:18px}
+
+/* ---------- Sheets & toasts ---------- */
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(10,16,22,.58);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:640px;max-height:90vh;overflow:auto;background:var(--papel);border-radius:14px 14px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+.sheet:focus{outline:none}
+.sheet h2{margin-top:6px}
+.sheet h3{font:600 20px/1.1 var(--font-display);margin:20px 0 6px}
+.sh-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.sh-head .btn{flex:none}
+.pb{display:inline-grid;place-items:center;min-width:44px;height:44px;border-radius:4px;font:700 28px/1 var(--font-display);flex:none}
+.pb.p1{background:var(--p1);color:var(--on-p1)}.pb.p2{background:var(--p2);color:var(--on-p2)}
+.pb.p3{background:var(--p3);color:var(--on-p3)}.pb.p4{background:var(--p4);color:var(--on-p4)}
+.pb.p5{background:var(--p5);color:var(--on-p5)}.pb.ok{background:var(--ok);color:var(--on-ok)}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv span{color:var(--muted)}
+.kv b{font-weight:600;text-align:right}
+.shot{display:block;width:100%;max-height:260px;object-fit:cover;border-radius:4px;margin:6px 0 10px}
+.note{background:var(--papel2);padding:10px 12px;border-radius:4px;margin-top:8px}
+.toasts{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{max-width:560px;width:100%;padding:12px 14px;background:var(--tinta);color:var(--papel);border-left:6px solid var(--cobalto);border-radius:4px;font-weight:500;box-shadow:0 4px 14px var(--shadow);animation:up .2s ease-out}
+.toast.ok{border-left-color:var(--ok)}
+.toast.warn{border-left-color:var(--p3)}
+.toast.alert{border-left-color:var(--p5)}
+@keyframes up{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.sheet,.toast{animation:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet"></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+   Turno — demo beta (todo en memoria del navegador, sin servidor)
+   Simula: roles, pool atómico, check-in con foto, escalamiento 1–5,
+   job de caducidad, recurrencia y recetas con temporizadores.
+   ===================================================================== */
+const H = 3600000, M = 60000, D = 86400000;
+const LS_KEY = 'turno-demo-v1';
+let S;
+const ui = { userId:null, tab:'tasks', filter:'open', area:'all', sheet:null, editId:null, form:null,
+  finish:null, recipeId:null, steps:{}, speed:1, invForm:false, inv:null, lastAdvance:null };
+const timers = {};
+
+/* ---------- utilidades ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now = () => Date.now() + S.clockOffset;
+const me = () => S.users.find(u => u.id === ui.userId) || null;
+const task = id => S.tasks.find(t => t.id === id);
+const space = id => S.spaces.find(s => s.id === id);
+const user = id => S.users.find(u => u.id === id);
+const nid = p => p + (S.seq++);
+const byUrgency = (a,b) => b.effective_priority - a.effective_priority || a.due_at - b.due_at;
+const FREQ = { unica:'Única', diaria:'Diaria', semanal:'Semanal' };
+const PLABEL = ['', 'Puede esperar', 'Normal', 'Importante', 'Urgente', 'Crítica'];
+const fmtT = ts => new Date(ts).toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+const fmtD = ts => new Date(ts).toLocaleDateString('es', { weekday:'short', day:'numeric', month:'short' });
+const fmtDT = ts => fmtD(ts) + ', ' + fmtT(ts);
+function dur(ms){
+  const m = Math.max(1, Math.round(Math.abs(ms) / M));
+  if (m < 60) return m + ' min';
+  const h = Math.floor(m / 60), mm = m % 60;
+  if (h < 24) return mm ? `${h} h ${mm} min` : `${h} h`;
+  const d = Math.floor(h / 24), hh = h % 24;
+  return hh ? `${d} d ${hh} h` : `${d} d`;
+}
+const dueText = t => { const r = t.due_at - now(); return r < 0 ? 'Vencida hace ' + dur(r) : 'Vence en ' + dur(r); };
+const mmss = s => { s = Math.ceil(s); return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0'); };
+
+const ICONS = {
+  clip:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  box:'<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  book:'<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
+  pulse:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>'
+};
+const ic = (n, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+
+/* ---------- datos estáticos: recetario ---------- */
+const RECIPES = [
+  { id:'r1', name:'Salsa de tomate base', yield:'Rinde 2 L',
+    ingredients:['1,5 kg de tomate triturado','2 cebollas medianas','4 dientes de ajo','80 ml de aceite de oliva','1 manojo de albahaca','Sal y azúcar al gusto'],
+    steps:[
+      { text:'Picar la cebolla en brunoise fino y laminar el ajo.', timers:[] },
+      { text:'Sofreír la cebolla a fuego medio hasta que quede transparente. Añadir el ajo el último minuto.', timers:[{label:'Sofrito', seconds:480}] },
+      { text:'Incorporar el tomate, bajar el fuego y cocinar con la tapa entreabierta. Remover de vez en cuando.', timers:[{label:'Cocción del tomate', seconds:1500}] },
+      { text:'Retirar del fuego, añadir la albahaca y triturar. Rectificar sal y acidez con una pizca de azúcar.', timers:[] },
+      { text:'Enfriar en baño de hielo antes de envasar y etiquetar con la fecha.', timers:[{label:'Enfriado rápido', seconds:900}] }
+    ]},
+  { id:'r2', name:'Masa de pizza napolitana', yield:'Rinde 8 bolas de 250 g',
+    ingredients:['1 kg de harina de fuerza','650 ml de agua','25 g de sal','3 g de levadura fresca'],
+    steps:[
+      { text:'Disolver la levadura en el agua y mezclar con la harina. Añadir la sal al final.', timers:[] },
+      { text:'Amasar hasta que la masa quede lisa y elástica.', timers:[{label:'Amasado', seconds:600}] },
+      { text:'Primer reposo en bloque, tapada, a temperatura ambiente.', timers:[{label:'Reposo en bloque', seconds:3600}] },
+      { text:'Porcionar en bolas de 250 g y dejarlas reposar en bandeja.', timers:[{label:'Reposo en bolas', seconds:1800}] },
+      { text:'Hornear a la máxima temperatura.', timers:[{label:'Horneado', seconds:90}] }
+    ]},
+  { id:'r3', name:'Risotto de hongos', yield:'Rinde 6 raciones',
+    ingredients:['400 g de arroz arborio','300 g de hongos mixtos','1,2 L de caldo de verduras caliente','100 ml de vino blanco','60 g de mantequilla','80 g de parmesano rallado','1 chalota'],
+    steps:[
+      { text:'Sofreír la chalota picada con mantequilla. Tostar el arroz sin dejar de remover.', timers:[{label:'Tostado del arroz', seconds:120}] },
+      { text:'Desglasar con el vino y dejar que evapore.', timers:[{label:'Reducción del vino', seconds:90}] },
+      { text:'Añadir el caldo por tandas, removiendo. En paralelo, saltear los hongos en otra sartén.', timers:[{label:'Cocción del arroz', seconds:1080},{label:'Hongos salteados', seconds:360}] },
+      { text:'Fuera del fuego, mantecar con mantequilla fría y parmesano.', timers:[{label:'Reposo antes de servir', seconds:120}] }
+    ]}
+];
+
+/* ---------- persistencia ---------- */
+function save(){ try { S.savedAt = Date.now(); localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e){} }
+function load(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    const o = JSON.parse(raw);
+    if (!o || o.v !== 1 || Date.now() - o.savedAt > 6 * H) return false;
+    S = o; return true;
+  } catch(e){ return false; }
+}
+
+/* ---------- motor de prioridad (lo que en producción hace pg_cron) ---------- */
+function calcPriority(t, at){
+  const rem = t.due_at - at, b = t.base_priority;
+  if (rem < H) return 5;                       // menos de 1 h o vencida
+  if (rem < 4 * H) return Math.min(5, b + 2);  // menos de 4 h
+  if (rem < 24 * H) return Math.min(5, b + 1); // menos de 24 h
+  return b;
+}
+function logEvent(type, o, text, at){
+  S.events.unshift({ id:nid('e'), at: at ?? now(), type, task_id:o?.id || null, space_id:o?.space_id || null, text });
+  if (S.events.length > 250) S.events.length = 250;
+}
+function newTask(o, at){
+  at = at ?? now();
+  const t = Object.assign({ id:nid('t'), description:'', frequency:'unica', assigned_to:null, assigned_by_admin:false,
+    status:'pending', photo_required:false, source:'manual', template_id:null, checkin:null, taken_at:null,
+    completed_at:null, created_at:at }, o);
+  t.effective_priority = calcPriority(t, at);
+  if (t.assigned_to){ t.status = 'taken'; t.taken_at = at; t.assigned_by_admin = true; }
+  S.tasks.push(t);
+  return t;
+}
+function expiryJob(at){
+  S.inventory.forEach(it => {
+    if (it.task_id) return;
+    if (it.expires_at - at <= 48 * H){
+      const t = newTask({ space_id:it.space_id, area:it.area, title:'Usar o revisar ' + it.name,
+        description:`Caduca el ${fmtDT(it.expires_at)}. Quedan ${it.qty} ${it.unit}. Inclúyelo en el menú del día o descártalo según protocolo.`,
+        base_priority:3, due_at:it.expires_at, source:'inventory' }, at);
+      it.task_id = t.id;
+      logEvent('auto', t, `Job de caducidad creó la tarea «${t.title}»`, at);
+    }
+  });
+}
+function escalate(at){
+  const pushes = [];
+  S.tasks.forEach(t => {
+    if (t.status === 'completed') return;
+    const p = calcPriority(t, at);
+    if (p > t.effective_priority){
+      const from = t.effective_priority;
+      t.effective_priority = p;
+      logEvent('escalate', t, `«${t.title}» sube de prioridad ${from} a ${p}`, at);
+      if (p >= 4 && from < 4) pushes.push(t);
+    }
+  });
+  return pushes;
+}
+function runEngine(at){
+  expiryJob(at);
+  const pushes = escalate(at);
+  S.lastCron = Math.max(S.lastCron || 0, at);
+  return pushes;
+}
+function advance(ms, label){
+  const start = now(), target = start + ms;
+  S.clockOffset += ms;
+  let pushes = [];
+  for (let t = start + 5 * M; t <= target; t += 5 * M) pushes = pushes.concat(runEngine(t)); // cron cada 5 min simulados
+  pushes = pushes.concat(runEngine(target));
+  const changes = S.events.filter(e => e.at > start && (e.type === 'escalate' || e.type === 'auto')).reverse();
+  ui.lastAdvance = { label, changes };
+  save();
+  notifyPushes(pushes);
+  render();
+}
+function notifyPushes(list){
+  const u = me(); if (!u || !list.length) return;
+  const rel = list.filter(t => u.role === 'admin' ? t.space_id === S.adminSpace
+    : (t.space_id === u.space_id && (!t.assigned_to || t.assigned_to === u.id)));
+  if (!rel.length) return;
+  rel.sort(byUrgency);
+  const t = rel[0];
+  toast(`Notificación push: «${t.title}» pasó a prioridad ${t.effective_priority}` +
+    (rel.length > 1 ? ` y otras ${rel.length - 1} tareas subieron de nivel.` : '.'), 'alert');
+  try { navigator.vibrate && navigator.vibrate(120); } catch(e){}
+}
+function spawnNext(t){
+  const period = t.frequency === 'diaria' ? D : t.frequency === 'semanal' ? 7 * D : 0;
+  if (!period) return null;
+  let due = t.due_at + period;
+  while (due < now()) due += period;
+  const n = newTask({ space_id:t.space_id, area:t.area, title:t.title, description:t.description, frequency:t.frequency,
+    base_priority:t.base_priority, due_at:due, photo_required:t.photo_required, template_id:t.template_id || t.id,
+    assigned_to: t.assigned_by_admin ? t.assigned_to : null });
+  logEvent('recur', n, `La plantilla ${t.frequency} generó la próxima «${n.title}» para ${fmtDT(due)}`);
+  return n;
+}
+
+/* ---------- datos de ejemplo ---------- */
+function seed(){
+  const t0 = Date.now();
+  S = { v:1, savedAt:t0, clockOffset:0, lastCron:t0, seq:1, adminSpace:'sp1',
+    spaces:[
+      { id:'sp1', name:'Restaurante La Esquina', kind:'Local', areas:['Cocina','Salón','Barra','Almacén'] },
+      { id:'sp2', name:'Boda Martínez–López', kind:'Evento', areas:['Cocina de campo','Salón principal','Jardín','Barra libre'] }
+    ],
+    users:[
+      { id:'u0', name:'Carla Ruiz', role:'admin', title:'Administradora', space_id:null, shift:true, shift_at:t0 - 4*H },
+      { id:'u1', name:'Diego Paredes', role:'employee', title:'Cocina', space_id:'sp1', shift:false, shift_at:null },
+      { id:'u2', name:'Lucía Fernández', role:'employee', title:'Salón', space_id:'sp1', shift:true, shift_at:t0 - 2*H },
+      { id:'u3', name:'Mateo Silva', role:'employee', title:'Barra', space_id:'sp1', shift:true, shift_at:t0 - 2*H },
+      { id:'u4', name:'Sofía Ortega', role:'employee', title:'Catering', space_id:'sp2', shift:false, shift_at:null }
+    ],
+    tasks:[], inventory:[], events:[] };
+  logEvent('shift', { space_id:'sp1' }, 'Lucía Fernández inició turno', t0 - 2*H);
+  logEvent('shift', { space_id:'sp1' }, 'Mateo Silva inició turno', t0 - 2*H);
+  const T = o => newTask(o, t0);
+  const ap = T({ space_id:'sp1', area:'Cocina', title:'Encender hornos y plancha',
+    description:'Rutina de apertura. Dejar los hornos a 220 °C.', frequency:'diaria', base_priority:2, due_at:t0 - 2*H });
+  Object.assign(ap, { status:'completed', assigned_to:'u1', taken_at:t0 - 3.2*H, completed_at:t0 - 2.6*H, effective_priority:2,
+    checkin:{ started_at:t0 - 3*H, ended_at:t0 - 2.6*H, notes:'El horno 2 tarda en subir de temperatura. Avisar a mantenimiento.', photo:null } });
+  logEvent('done', ap, 'Diego Paredes completó «Encender hornos y plancha»', t0 - 2.6*H);
+  T({ space_id:'sp1', area:'Cocina', title:'Limpiar y sanitizar la plancha', frequency:'diaria', base_priority:2, due_at:t0 + 30*H,
+    photo_required:true, description:'Retirar residuos, desengrasar y sanitizar. Foto de la superficie limpia.' });
+  T({ space_id:'sp1', area:'Almacén', title:'Registrar temperatura de las cámaras', frequency:'diaria', base_priority:3, due_at:t0 + 7*H,
+    description:'Cámara de refrigeración (0–4 °C) y congelador (−18 °C). Anotar los valores en las notas.' });
+  T({ space_id:'sp1', area:'Salón', title:'Montar la terraza para 40 comensales', frequency:'unica', base_priority:2, due_at:t0 + 5*H,
+    photo_required:true, description:'10 mesas de 4, manteles beige, servicio completo y velas apagadas.' });
+  T({ space_id:'sp1', area:'Barra', title:'Reponer hielo, limones y menta', frequency:'diaria', base_priority:1, due_at:t0 + 32*H,
+    assigned_to:'u3', description:'Llenar la cubitera grande y preparar 20 limones en gajos.' });
+  T({ space_id:'sp1', area:'Cocina', title:'Desengrasar la campana extractora', frequency:'semanal', base_priority:2, due_at:t0 + 3*D,
+    photo_required:true, description:'Filtros al lavavajillas industrial y limpieza interior de la campana.' });
+  T({ space_id:'sp2', area:'Salón principal', title:'Montar la mesa imperial y los centros florales', frequency:'unica', base_priority:3, due_at:t0 + 30*H,
+    photo_required:true, description:'Mesa para 24 personas. Los centros llegan a las 10:00.' });
+  T({ space_id:'sp2', area:'Cocina de campo', title:'Cata final del menú con los novios', frequency:'unica', base_priority:4, due_at:t0 + 9*H,
+    description:'Preparar 2 raciones de cada plato. Anotar cambios que pidan.' });
+  T({ space_id:'sp2', area:'Jardín', title:'Probar sonido para los brindis', frequency:'unica', base_priority:2, due_at:t0 + 34*H,
+    description:'Dos micrófonos inalámbricos y prueba de volumen en la zona del banquete.' });
+  const inv = (space_id, name, qty, unit, area, h) => S.inventory.push({ id:nid('i'), space_id, name, qty, unit, area, expires_at:t0 + h*H, task_id:null });
+  inv('sp1','Leche entera', 12, 'L', 'Almacén', 20);
+  inv('sp1','Lechuga romana', 6, 'ud', 'Almacén', 40);
+  inv('sp1','Pollo fresco', 8, 'kg', 'Almacén', 60);
+  inv('sp1','Mozzarella fior di latte', 3, 'kg', 'Almacén', 96);
+  inv('sp1','Aceite de oliva virgen extra', 10, 'L', 'Almacén', 4800);
+  inv('sp2','Nata para montar', 6, 'L', 'Cocina de campo', 30);
+  inv('sp2','Fresas', 4, 'kg', 'Cocina de campo', 52);
+  inv('sp2','Cava brut', 24, 'botellas', 'Barra libre', 9600);
+  runEngine(t0);
+}
+
+/* ---------- acciones: sesión y turno ---------- */
+function loginAs(id){
+  ui.userId = id; ui.sheet = null; ui.editId = null; ui.form = null; ui.recipeId = null;
+  ui.tab = user(id).role === 'admin' ? 'tasks' : 'pool';
+  render(); window.scrollTo(0, 0);
+  setTimeout(() => toast('Toca el reloj de arriba para avanzar el tiempo y ver cómo escalan las prioridades.'), 500);
+}
+function logout(){ ui.userId = null; ui.sheet = null; render(); window.scrollTo(0, 0); }
+function toggleShift(){
+  const u = me(); u.shift = !u.shift; u.shift_at = u.shift ? now() : null;
+  logEvent('shift', { space_id:u.space_id }, `${u.name} ${u.shift ? 'inició' : 'terminó'} turno`);
+  save(); toast(u.shift ? 'Turno iniciado. Ya puedes tomar tareas.' : 'Turno terminado.', 'ok'); render();
+}
+function setTab(id){
+  if (id === 'new'){ if (ui.tab !== 'new' || !ui.form){ ui.editId = null; ui.form = blankForm(); } }
+  else ui.editId = null;
+  ui.tab = id; ui.recipeId = null; render(); window.scrollTo(0, 0);
+}
+
+/* ---------- acciones: tareas ---------- */
+function takeTask(id){
+  const u = me(), t = task(id);
+  if (!u.shift){ toast('Inicia tu turno para poder tomar tareas.', 'warn'); return; }
+  // En producción: UPDATE tasks SET assigned_to=$1 WHERE id=$2 AND assigned_to IS NULL (atómico)
+  if (!t || t.status !== 'pending' || t.assigned_to){ toast('Otra persona ya tomó esa tarea.', 'warn'); render(); return; }
+  t.assigned_to = u.id; t.status = 'taken'; t.taken_at = now();
+  logEvent('take', t, `${u.name} tomó «${t.title}»`);
+  save(); toast('Tarea tomada. La encuentras en «Mis tareas».', 'ok'); render();
+}
+function releaseTask(id){
+  const u = me(), t = task(id);
+  t.assigned_to = null; t.status = 'pending'; t.taken_at = null;
+  logEvent('release', t, `${u.name} devolvió «${t.title}» al pool`);
+  save(); toast('Tarea devuelta al pool.'); render();
+}
+function startTask(id){
+  const u = me(), t = task(id);
+  t.checkin = { started_at:now(), ended_at:null, notes:'', photo:null };
+  logEvent('start', t, `${u.name} inició «${t.title}»`);
+  save(); toast('Entrada registrada.', 'ok'); render();
+}
+function openFinish(id){ ui.finish = { notes:'', photo:null, err:'' }; ui.sheet = { type:'finish', id }; render(); focusSheet(); }
+function finishTask(id){
+  const u = me(), t = task(id), f = ui.finish;
+  if (t.photo_required && !f.photo){ f.err = 'Esta tarea exige una foto para completarse.'; render(); return; }
+  t.checkin.ended_at = now(); t.checkin.notes = f.notes.trim(); t.checkin.photo = f.photo || null;
+  t.status = 'completed'; t.completed_at = now();
+  logEvent('done', t, `${u.name} completó «${t.title}»`);
+  const it = S.inventory.find(i => i.task_id === t.id);
+  if (it){ S.inventory = S.inventory.filter(i => i !== it); logEvent('auto', t, `${it.name} salió del inventario`); }
+  const nx = spawnNext(t);
+  ui.sheet = null; ui.finish = null; save();
+  toast(nx ? 'Tarea completada. Se generó la próxima ocurrencia.' : 'Tarea completada.', 'ok'); render();
+}
+function readPhoto(file){
+  return new Promise(res => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const r = Math.min(1, 640 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', .6));
+      };
+      img.onerror = () => res(null); img.src = fr.result;
+    };
+    fr.onerror = () => res(null); fr.readAsDataURL(file);
+  });
+}
+async function pickPhoto(input){
+  const f = input.files && input.files[0]; if (!f) return;
+  const p = await readPhoto(f);
+  if (p){ ui.finish.photo = p; ui.finish.err = ''; } else ui.finish.err = 'No se pudo leer la imagen. Prueba con otra.';
+  render();
+}
+function samplePhoto(){
+  const c = document.createElement('canvas'); c.width = 640; c.height = 400;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 640, 400); g.addColorStop(0, '#9aa4ab'); g.addColorStop(1, '#e7ebee');
+  x.fillStyle = g; x.fillRect(0, 0, 640, 400);
+  x.fillStyle = '#131C25'; x.font = '700 44px sans-serif'; x.fillText('Foto de muestra', 36, 200);
+  x.font = '400 24px sans-serif'; x.fillText(fmtDT(now()), 36, 240);
+  ui.finish.photo = c.toDataURL('image/jpeg', .7); ui.finish.err = ''; render();
+}
+
+/* ---------- CRUD admin ---------- */
+function blankForm(){
+  const sp = space(S.adminSpace);
+  return { title:'', desc:'', area:sp.areas[0], freq:'unica', prio:3, assign:'pool', dueN:8, dueU:'h', photo:false, err:'', errDue:'' };
+}
+function formFromTask(t){
+  return { title:t.title, desc:t.description, area:t.area, freq:t.frequency, prio:t.base_priority, assign:t.assigned_to || 'pool',
+    dueN:'', dueU:'h', photo:t.photo_required, err:'', errDue:'' };
+}
+function setForm(k, v){ ui.form[k] = v; render(); }
+function saveForm(){
+  const f = ui.form, a = me(), sp = space(S.adminSpace);
+  f.err = ''; f.errDue = '';
+  const dn = parseFloat(f.dueN), mult = f.dueU === 'd' ? D : H;
+  if (!f.title.trim()) f.err = 'Escribe un título para la tarea.';
+  if (!ui.editId && !(dn > 0)) f.errDue = 'Indica en cuánto tiempo vence (más de 0).';
+  if (f.err || f.errDue){ render(); const el = document.getElementById(f.err ? 'f-title' : 'f-dn'); if (el) el.focus(); return; }
+  if (ui.editId){
+    const t = task(ui.editId);
+    Object.assign(t, { title:f.title.trim(), description:f.desc.trim(), area:f.area, frequency:f.freq, base_priority:f.prio, photo_required:f.photo });
+    if (dn > 0) t.due_at = now() + dn * mult;
+    if (!t.checkin){
+      if (f.assign === 'pool'){ t.assigned_to = null; t.assigned_by_admin = false; t.status = 'pending'; t.taken_at = null; }
+      else { t.assigned_to = f.assign; t.assigned_by_admin = true; t.status = 'taken'; t.taken_at = now(); }
+    }
+    t.effective_priority = calcPriority(t, now());
+    logEvent('edit', t, `${a.name} editó «${t.title}»`);
+    toast('Cambios guardados. La prioridad se recalculó.', 'ok');
+  } else {
+    const t = newTask({ space_id:sp.id, area:f.area, title:f.title.trim(), description:f.desc.trim(), frequency:f.freq,
+      base_priority:f.prio, due_at:now() + dn * mult, photo_required:f.photo, assigned_to:f.assign === 'pool' ? null : f.assign });
+    if (t.assigned_to) logEvent('create', t, `${a.name} asignó «${t.title}» a ${user(t.assigned_to).name}`);
+    else logEvent('create', t, `${a.name} lanzó «${t.title}» al pool`);
+    toast(t.assigned_to ? 'Tarea asignada.' : 'Tarea lanzada al pool. El equipo la ve ahora.', 'ok');
+  }
+  ui.editId = null; ui.form = null; ui.filter = 'open'; ui.tab = 'tasks'; save(); render(); window.scrollTo(0, 0);
+}
+function editTask(id){ ui.editId = id; ui.form = formFromTask(task(id)); ui.sheet = null; ui.tab = 'new'; render(); window.scrollTo(0, 0); }
+function askDelete(){ ui.sheet.confirm = true; render(); }
+function deleteTask(id){
+  const t = task(id), a = me();
+  S.tasks = S.tasks.filter(x => x.id !== id);
+  S.inventory.forEach(i => { if (i.task_id === id) i.task_id = 'descartada'; });
+  logEvent('delete', { space_id:t.space_id }, `${a.name} eliminó «${t.title}»`);
+  ui.sheet = null; save(); toast('Tarea eliminada.'); render();
+}
+
+/* ---------- inventario ---------- */
+function openInvForm(){ ui.invForm = !ui.invForm; ui.inv = { name:'', qty:1, unit:'kg', area:space(S.adminSpace).areas[0], n:24, u:'h', err:'' }; render(); }
+function addItem(){
+  const f = ui.inv, n = parseFloat(f.n), q = parseFloat(f.qty);
+  if (!f.name.trim()){ f.err = 'Escribe el nombre del insumo.'; render(); return; }
+  if (!(n > 0)){ f.err = 'Indica en cuánto caduca (más de 0).'; render(); return; }
+  const before = S.tasks.length;
+  S.inventory.push({ id:nid('i'), space_id:S.adminSpace, name:f.name.trim(), qty:q > 0 ? q : 1, unit:f.unit.trim() || 'ud', area:f.area,
+    expires_at:now() + n * (f.u === 'd' ? D : H), task_id:null });
+  expiryJob(now());
+  ui.invForm = false; ui.inv = null; save();
+  toast(S.tasks.length > before ? 'Insumo añadido. Caduca pronto, así que se creó una tarea urgente.' : 'Insumo añadido.', 'ok'); render();
+}
+function removeItem(id){ S.inventory = S.inventory.filter(i => i.id !== id); save(); toast('Insumo retirado.'); render(); }
+
+/* ---------- recetas y temporizadores ---------- */
+function tmGet(key, sec, label){ if (!timers[key]) timers[key] = { rem:sec, total:sec, running:false, label }; return timers[key]; }
+function toggleTimer(key, sec, label){
+  const tm = tmGet(key, sec, label);
+  if (tm.rem <= 0) tm.rem = tm.total;
+  tm.running = !tm.running; render();
+}
+function resetTimer(key){ const tm = timers[key]; if (tm){ tm.rem = tm.total; tm.running = false; } render(); }
+function openRecipe(id){ ui.recipeId = id; render(); window.scrollTo(0, 0); }
+function toggleStep(k){ ui.steps[k] = !ui.steps[k]; render(); }
+function beep(){
+  try {
+    const a = new (window.AudioContext || window.webkitAudioContext)();
+    const o = a.createOscillator(), g = a.createGain();
+    o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = .15; o.start();
+    setTimeout(() => { o.stop(); a.close(); }, 350);
+  } catch(e){}
+  try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch(e){}
+}
+let lastTick = performance.now();
+setInterval(() => {
+  const n = performance.now(), dt = (n - lastTick) / 1000; lastTick = n;
+  const fin = [];
+  Object.keys(timers).forEach(k => {
+    const tm = timers[k]; if (!tm.running) return;
+    tm.rem = Math.max(0, tm.rem - dt * ui.speed);
+    if (tm.rem === 0){ tm.running = false; fin.push(tm); }
+    const el = document.querySelector('[data-tm="' + k + '"]');
+    if (el){ el.querySelector('.tm-t').textContent = mmss(tm.rem); el.querySelector('.tm-bar i').style.width = (100 * (1 - tm.rem / tm.total)) + '%'; }
+  });
+  if (fin.length){ fin.forEach(tm => toast('Temporizador listo: ' + tm.label, 'ok')); beep(); render(); }
+}, 250);
+
+/* ---------- simulaciones de demo ---------- */
+function simColleague(){
+  const u = me(), sid = u.role === 'admin' ? S.adminSpace : u.space_id;
+  const pool = S.tasks.filter(t => t.space_id === sid && t.status === 'pending' && !t.assigned_to).sort(byUrgency);
+  const others = S.users.filter(x => x.role === 'employee' && x.space_id === sid && x.id !== u.id && x.shift);
+  if (!pool.length){ toast('No hay tareas en el pool de este espacio.', 'warn'); return; }
+  if (!others.length){ toast('No hay compañeros en turno en este espacio.', 'warn'); return; }
+  const t = pool[0], c = others[0];
+  t.assigned_to = c.id; t.status = 'taken'; t.taken_at = now();
+  logEvent('take', t, `${c.name} tomó «${t.title}»`);
+  save(); toast(`${c.name} tomó «${t.title}». El pool se actualizó en todas las pantallas.`, 'ok'); render();
+}
+function resetDemo(){
+  try { localStorage.removeItem(LS_KEY); } catch(e){}
+  Object.keys(timers).forEach(k => delete timers[k]);
+  seed(); ui.sheet = null; ui.form = null; ui.editId = null; ui.lastAdvance = null; ui.recipeId = null; ui.userId = null;
+  save(); render(); window.scrollTo(0, 0); toast('Demo reiniciada con los datos de ejemplo.', 'ok');
+}
+
+/* ---------- toasts ---------- */
+function toast(msg, kind){
+  const box = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || ''); el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), kind === 'alert' ? 6000 : 3800);
+}
+
+/* ======================= VISTAS ======================= */
+function empty(title, text){ return `<div class="empty"><b>${title}</b><p>${text}</p></div>`; }
+
+function ticket(t, extra){
+  const p = t.effective_priority, up = p > t.base_priority, done = t.status === 'completed';
+  const late = !done && t.due_at < now();
+  let who;
+  if (done) who = `Completada por ${esc(user(t.assigned_to)?.name || '—')} a las ${fmtT(t.completed_at)}`;
+  else if (t.status === 'pending') who = 'En el pool, sin asignar';
+  else if (t.checkin) who = `${esc(user(t.assigned_to).name)} trabaja en ella desde las ${fmtT(t.checkin.started_at)}`;
+  else who = t.assigned_by_admin ? `Asignada a ${esc(user(t.assigned_to).name)}` : `Tomada por ${esc(user(t.assigned_to).name)}`;
+  const chips = [`<span class="chip">${esc(t.area)}</span>`];
+  if (t.frequency !== 'unica') chips.push(`<span class="chip">${FREQ[t.frequency]}</span>`);
+  if (t.photo_required) chips.push(`<span class="chip">${ic('camera', 13)} Con foto</span>`);
+  if (t.source === 'inventory') chips.push('<span class="chip auto">Caducidad</span>');
+  return `<div class="tk-wrap"><article class="ticket ${done ? 'done' : 'p' + p}" onclick="openTask('${t.id}')">
+    <div class="tk-prio" role="img" aria-label="${done ? 'Completada' : 'Prioridad ' + p + ' de 5'}">${done ? ic('check', 36) : `<b>${p}</b><small>${up ? '▲ desde ' + t.base_priority : 'de 5'}</small>`}</div>
+    <div class="tk-main">
+      <h3><button class="tk-title">${esc(t.title)}</button></h3>
+      <div class="tags">${chips.join('')}</div>
+      ${done ? '' : `<p class="tk-due${late ? ' late' : ''}">${dueText(t)}</p>`}
+      <p class="tk-who">${who}</p>${extra || ''}
+    </div></article></div>`;
+}
+
+function loginView(){
+  const adm = S.users.filter(u => u.role === 'admin'), emp = S.users.filter(u => u.role === 'employee');
+  const row = u => `<li><button class="row login-row" onclick="loginAs('${u.id}')">
+    <span class="av">${esc(u.name[0])}</span>
+    <span class="grow"><b>${esc(u.name)}</b><span class="muted">${u.role === 'admin' ? 'Gestiona todos los espacios' : esc(u.title) + ' en ' + esc(space(u.space_id).name)}</span></span>
+    ${u.role === 'employee' ? `<span class="chip ${u.shift ? 'on' : ''}">${u.shift ? 'En turno' : 'Fuera de turno'}</span>` : ''}
+    <span class="muted">${ic('chev')}</span></button></li>`;
+  return `<main class="wrap">
+    <h1 class="login-title">Turno</h1>
+    <p class="lead">Tareas, prioridades e inventario de tu local o evento, en el móvil de todo el equipo.</p>
+    <div class="rail"></div>
+    <h2>Administración</h2><ul class="rows">${adm.map(row).join('')}</ul>
+    <h2>Equipo</h2><ul class="rows">${emp.map(row).join('')}</ul>
+    <p class="hint" style="margin-top:22px">Demo con datos de ejemplo. El acceso real usará Supabase Auth y reglas RLS por rol: el empleado nunca ve las pantallas de administración.</p>
+  </main>`;
+}
+
+const ADMIN_TABS = [
+  { id:'tasks', label:'Tareas', icon:'clip' }, { id:'new', label:'Nueva', icon:'plus' }, { id:'inv', label:'Inventario', icon:'box' },
+  { id:'rec', label:'Recetas', icon:'book' }, { id:'act', label:'Actividad', icon:'pulse' }
+];
+const STAFF_TABS = [
+  { id:'pool', label:'Pool', icon:'inbox' }, { id:'mine', label:'Mis tareas', icon:'clip' }, { id:'rec', label:'Recetas', icon:'book' }
+];
+
+function shell(u){
+  const isAdmin = u.role === 'admin';
+  const tabs = isAdmin ? ADMIN_TABS : STAFF_TABS;
+  if (!tabs.find(t => t.id === ui.tab)) ui.tab = tabs[0].id;
+  const sp = isAdmin ? space(S.adminSpace) : space(u.space_id);
+  const counts = {};
+  if (!isAdmin){
+    counts.pool = S.tasks.filter(t => t.space_id === u.space_id && t.status === 'pending').length;
+    counts.mine = S.tasks.filter(t => t.assigned_to === u.id && t.status === 'taken').length;
+  }
+  const spc = isAdmin
+    ? `<label class="vh" for="sp-sel">Espacio activo</label><select id="sp-sel" onchange="S.adminSpace=this.value;ui.area='all';if(ui.tab==='new'){ui.form=blankForm()}save();render()">${S.spaces.map(s => `<option value="${s.id}" ${s.id === sp.id ? 'selected' : ''}>${esc(s.name)} (${s.kind})</option>`).join('')}</select>`
+    : `<div class="spname">${esc(sp.name)} <span class="chip">${sp.kind}</span></div>`;
+  return `<header class="top"><div class="wrap">
+      <div class="brand"><b>Turno</b><span>${isAdmin ? '/admin' : '/staff'}</span></div>
+      <button class="clock" onclick="openSheet('demo')" aria-label="Abrir el panel de demostración">${ic('clock', 18)}<span>${fmtT(now())}</span><small>${fmtD(now())}</small></button>
+      <button class="av" onclick="openSheet('me')" aria-label="Cuenta de ${esc(u.name)}">${esc(u.name[0])}</button>
+      <div class="spc">${spc}</div>
+    </div></header>
+    <main class="wrap" id="view">${viewFor(u)}</main>
+    <nav class="tabs" style="--n:${tabs.length}" aria-label="Secciones">${tabs.map(t => `<button class="${ui.tab === t.id ? 'on' : ''}" ${ui.tab === t.id ? 'aria-current="page"' : ''} onclick="setTab('${t.id}')">${ic(t.icon)}<span>${t.label}</span>${counts[t.id] ? `<span class="bd">${counts[t.id]}</span>` : ''}</button>`).join('')}</nav>`;
+}
+
+function viewFor(u){
+  if (u.role === 'admin'){
+    if (ui.tab === 'tasks') return adminTasks();
+    if (ui.tab === 'new') return formView();
+    if (ui.tab === 'inv') return invView();
+    if (ui.tab === 'rec') return recView();
+    if (ui.tab === 'act') return actView();
+  } else {
+    if (ui.tab === 'pool') return staffPool(u);
+    if (ui.tab === 'mine') return staffMine(u);
+    if (ui.tab === 'rec') return recView();
+  }
+  return '';
+}
+
+/* --- admin: lista de tareas --- */
+function adminTasks(){
+  const sp = space(S.adminSpace);
+  const all = S.tasks.filter(t => t.space_id === sp.id);
+  const open = all.filter(t => t.status !== 'completed');
+  const counts = [1,2,3,4,5].map(p => open.filter(t => t.effective_priority === p).length);
+  const hi = counts[3] + counts[4];
+  let list = all.filter(t => ui.filter === 'open' ? t.status !== 'completed'
+    : ui.filter === 'pool' ? t.status === 'pending' : ui.filter === 'taken' ? t.status === 'taken' : t.status === 'completed');
+  if (ui.area !== 'all') list = list.filter(t => t.area === ui.area);
+  list.sort(ui.filter === 'done' ? (a,b) => b.completed_at - a.completed_at : byUrgency);
+  const F = [['open','Abiertas'],['pool','En el pool'],['taken','Tomadas'],['done','Completadas']];
+  return `<h1>Tareas</h1>
+    ${open.length ? `<div class="heat" role="img" aria-label="Tareas abiertas por prioridad">${counts.map((n,i) => n ? `<span class="p${i+1}" style="flex:${n}" title="Prioridad ${i+1}">${n}</span>` : '').join('')}</div>
+    <p class="heat-cap">${open.length} ${open.length === 1 ? 'tarea abierta' : 'tareas abiertas'}; ${hi} en prioridad 4 o 5.</p>` : '<p class="lead">No hay tareas abiertas en este espacio.</p>'}
+    <div class="filters" role="group" aria-label="Filtrar por estado">${F.map(([k,l]) => `<button class="${ui.filter === k ? 'on' : ''}" aria-pressed="${ui.filter === k}" onclick="ui.filter='${k}';render()">${l}</button>`).join('')}</div>
+    <div class="area-sel"><label class="vh" for="area-sel">Filtrar por área</label><select id="area-sel" onchange="ui.area=this.value;render()"><option value="all">Todas las áreas</option>${sp.areas.map(a => `<option ${ui.area === a ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+    ${list.length ? `<div class="rail"></div>${list.map(t => ticket(t)).join('')}` : empty('Sin tareas con este filtro', 'Crea una en la pestaña Nueva y lánzala al pool.')}`;
+}
+
+/* --- admin: formulario crear/editar --- */
+function formView(){
+  const f = ui.form, sp = space(S.adminSpace), ed = !!ui.editId;
+  const t = ed ? task(ui.editId) : null;
+  const emps = S.users.filter(x => x.role === 'employee' && x.space_id === sp.id);
+  const locked = !!(t && t.checkin);
+  const launch = f.assign === 'pool';
+  return `<h1>${ed ? 'Editar tarea' : 'Nueva tarea'}</h1>
+    <p class="lead">${ed ? 'Al guardar se recalcula la prioridad con la nueva fecha límite.' : `Se publica en «${esc(sp.name)}». En el pool, cualquier empleado en turno puede tomarla.`}</p>
+    <div class="field"><label for="f-title">Título</label>
+      <input type="text" id="f-title" value="${esc(f.title)}" oninput="ui.form.title=this.value" placeholder="Ej. Cambiar el aceite de la freidora" autocomplete="off">
+      ${f.err ? `<p class="err" role="alert">${f.err}</p>` : ''}</div>
+    <div class="field"><label for="f-desc">Descripción</label>
+      <textarea id="f-desc" rows="3" oninput="ui.form.desc=this.value" placeholder="Qué hay que hacer y qué se considera terminado">${esc(f.desc)}</textarea></div>
+    <div class="field"><label for="f-area">Área</label>
+      <select id="f-area" onchange="ui.form.area=this.value">${sp.areas.map(a => `<option ${f.area === a ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+    <div class="field"><span class="lbl" id="l-freq">Frecuencia</span>
+      <div class="seg three" role="group" aria-labelledby="l-freq">${Object.keys(FREQ).map(k => `<button type="button" class="${f.freq === k ? 'on' : ''}" aria-pressed="${f.freq === k}" onclick="setForm('freq','${k}')">${FREQ[k]}</button>`).join('')}</div>
+      <p class="hint">${f.freq === 'unica' ? 'Se hace una vez.' : 'Al completarla, el sistema genera la siguiente ocurrencia automáticamente.'}</p></div>
+    <div class="field"><span class="lbl" id="l-prio">Prioridad base</span>
+      <div class="seg five" role="group" aria-labelledby="l-prio">${[1,2,3,4,5].map(n => `<button type="button" class="p${n} ${f.prio === n ? 'on' : ''}" aria-pressed="${f.prio === n}" aria-label="Prioridad ${n}, ${PLABEL[n]}" onclick="setForm('prio',${n})">${n}</button>`).join('')}</div>
+      <p class="hint">${PLABEL[f.prio]}. Sube sola al acercarse la fecha límite: +1 a menos de 24 h, +2 a menos de 4 h y 5 en la última hora.</p></div>
+    <div class="field"><label for="f-dn">${ed ? 'Reprogramar vencimiento (opcional)' : 'Vence en'}</label>
+      <div class="two"><input type="number" inputmode="decimal" min="0" id="f-dn" value="${esc(f.dueN)}" oninput="ui.form.dueN=this.value" placeholder="${ed ? 'Dejar vacío para mantener' : ''}">
+      <select aria-label="Unidad de tiempo" onchange="ui.form.dueU=this.value"><option value="h" ${f.dueU === 'h' ? 'selected' : ''}>horas</option><option value="d" ${f.dueU === 'd' ? 'selected' : ''}>días</option></select></div>
+      ${f.errDue ? `<p class="err" role="alert">${f.errDue}</p>` : (ed ? `<p class="hint">Vence actualmente el ${fmtDT(t.due_at)}.</p>` : '')}</div>
+    <div class="field"><label for="f-asg">Asignación</label>
+      <select id="f-asg" onchange="setForm('assign',this.value)" ${locked ? 'disabled' : ''}><option value="pool" ${launch ? 'selected' : ''}>Pool de tareas (la toma quien llegue primero)</option>${emps.map(e => `<option value="${e.id}" ${f.assign === e.id ? 'selected' : ''}>${esc(e.name)} (${esc(e.title)})</option>`).join('')}</select>
+      ${locked ? '<p class="hint">Ya fue iniciada, así que no se puede reasignar.</p>' : ''}</div>
+    <label class="check"><input type="checkbox" ${f.photo ? 'checked' : ''} onchange="ui.form.photo=this.checked"><span>Exigir foto al finalizar<br><span class="hint">No se podrá completar sin adjuntarla.</span></span></label>
+    <div class="btnrow" style="margin-top:14px"><button class="btn primary" onclick="saveForm()">${ed ? 'Guardar cambios' : launch ? 'Lanzar al pool' : 'Asignar tarea'}</button>${ed ? `<button class="btn" onclick="setTab('tasks')">Cancelar</button>` : ''}</div>`;
+}
+
+/* --- admin: inventario --- */
+function invView(){
+  const sp = space(S.adminSpace);
+  const items = S.inventory.filter(i => i.space_id === sp.id).sort((a,b) => a.expires_at - b.expires_at);
+  const f = ui.inv;
+  const form = ui.invForm && f ? `<div style="margin:14px 0 18px">
+    <div class="field"><label for="i-name">Insumo</label><input type="text" id="i-name" value="${esc(f.name)}" oninput="ui.inv.name=this.value" placeholder="Ej. Yogur natural" autocomplete="off"></div>
+    <div class="field"><span class="lbl">Cantidad y unidad</span><div class="two"><input type="number" inputmode="decimal" min="0" aria-label="Cantidad" value="${esc(f.qty)}" oninput="ui.inv.qty=this.value"><input type="text" aria-label="Unidad" value="${esc(f.unit)}" oninput="ui.inv.unit=this.value"></div></div>
+    <div class="field"><label for="i-area">Área</label><select id="i-area" onchange="ui.inv.area=this.value">${sp.areas.map(a => `<option ${f.area === a ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+    <div class="field"><span class="lbl">Caduca en</span><div class="two"><input type="number" inputmode="decimal" min="0" aria-label="Tiempo hasta caducar" value="${esc(f.n)}" oninput="ui.inv.n=this.value"><select aria-label="Unidad de tiempo" onchange="ui.inv.u=this.value"><option value="h" ${f.u === 'h' ? 'selected' : ''}>horas</option><option value="d" ${f.u === 'd' ? 'selected' : ''}>días</option></select></div>
+      ${f.err ? `<p class="err" role="alert">${f.err}</p>` : '<p class="hint">Prueba con 10 horas para ver cómo se crea una tarea urgente al instante.</p>'}</div>
+    <button class="btn primary" onclick="addItem()">Guardar insumo</button></div>` : '';
+  return `<h1>Inventario</h1>
+    <p class="lead">Cuando un insumo caduca en 48 h o menos, el sistema crea una tarea urgente con esa fecha límite.</p>
+    <button class="btn" onclick="openInvForm()">${ui.invForm ? 'Cerrar formulario' : 'Añadir insumo'}</button>${form}
+    ${items.length ? `<ul class="rows" style="margin-top:16px">${items.map(i => {
+      const r = i.expires_at - now(); const tk = task(i.task_id);
+      const cls = r < 0 ? 'late' : r < 24 * H ? 'warn' : '';
+      return `<li class="row"><div class="grow"><b>${esc(i.name)}</b><span class="muted">${esc(i.qty)} ${esc(i.unit)} en ${esc(i.area)}</span>
+        <span class="acts" style="margin-top:6px"><span class="chip ${cls}">${r < 0 ? 'Caducó hace ' + dur(r) : 'Caduca en ' + dur(r)}</span>${tk ? `<button class="chip auto" style="border:0;cursor:pointer" onclick="openTask('${tk.id}')">Ver tarea</button>` : ''}</span></div>
+        <button class="btn sm" onclick="removeItem('${i.id}')">Retirar</button></li>`; }).join('')}</ul>` : empty('Inventario vacío', 'Añade tus insumos con su fecha de caducidad para que el sistema vigile por ti.')}`;
+}
+
+/* --- admin: actividad --- */
+function actView(){
+  const sid = S.adminSpace;
+  const emps = S.users.filter(u => u.role === 'employee' && u.space_id === sid);
+  const ev = S.events.filter(e => e.space_id === sid).slice(0, 40);
+  return `<h1>Actividad</h1>
+    <h2 style="margin-top:6px">Equipo</h2>
+    ${emps.length ? `<ul class="rows">${emps.map(u => { const n = S.tasks.filter(t => t.assigned_to === u.id && t.status === 'taken').length;
+      return `<li class="row"><span class="av">${esc(u.name[0])}</span><div class="grow"><b>${esc(u.name)}</b><span class="muted">${esc(u.title)}</span></div>
+        <div class="rt"><span class="chip ${u.shift ? 'on' : ''}">${u.shift ? 'En turno' : 'Fuera de turno'}</span><span class="muted">${n} ${n === 1 ? 'tarea en curso' : 'tareas en curso'}</span></div></li>`; }).join('')}</ul>` : '<p class="lead">No hay empleados en este espacio.</p>'}
+    <h2>Registro del motor</h2>
+    <p class="lead">Cada cambio de prioridad y cada acción del equipo queda guardado. Último ciclo del cron: ${fmtT(S.lastCron)}.</p>
+    ${ev.length ? `<ul class="log">${ev.map(e => `<li class="ev-${e.type}"><time>${fmtT(e.at)}</time><span>${esc(e.text)}</span></li>`).join('')}</ul>` : '<p class="muted">Aún no hay actividad.</p>'}`;
+}
+
+/* --- empleado: pool y mis tareas --- */
+function staffPool(u){
+  const pool = S.tasks.filter(t => t.space_id === u.space_id && t.status === 'pending' && !t.assigned_to).sort(byUrgency);
+  const crit = pool.filter(t => t.effective_priority === 5).length;
+  const shift = u.shift
+    ? `<div class="shift on"><div><b>Turno activo</b><span class="muted">Desde las ${fmtT(u.shift_at)}</span></div><button class="btn sm" onclick="toggleShift()">Terminar turno</button></div>`
+    : `<div class="shift"><div><b>Tu turno está inactivo</b><span class="muted">Inícialo para poder tomar tareas.</span></div><button class="btn sm primary" onclick="toggleShift()">Iniciar turno</button></div>`;
+  const take = t => `<div class="acts"><button class="btn primary sm" aria-disabled="${!u.shift}" onclick="event.stopPropagation();takeTask('${t.id}')">Tomar tarea</button></div>`;
+  return `<h1>Pool de tareas</h1>${shift}
+    ${crit ? `<p class="crit" role="status">${crit === 1 ? 'Hay 1 tarea crítica esperando a que alguien la tome.' : `Hay ${crit} tareas críticas esperando a que alguien las tome.`}</p>` : ''}
+    ${pool.length ? `<div class="rail"></div>${pool.map(t => ticket(t, take(t))).join('')}` : empty('El pool está vacío', 'Cuando el administrador lance una tarea, aparecerá aquí al instante.')}`;
+}
+function staffMine(u){
+  const mine = S.tasks.filter(t => t.assigned_to === u.id && t.status === 'taken').sort(byUrgency);
+  const done = S.tasks.filter(t => t.assigned_to === u.id && t.status === 'completed').sort((a,b) => b.completed_at - a.completed_at).slice(0, 5);
+  const acts = t => t.checkin
+    ? `<p class="running">En curso desde las ${fmtT(t.checkin.started_at)}</p><div class="acts"><button class="btn primary sm" onclick="event.stopPropagation();openFinish('${t.id}')">Finalizar tarea</button></div>`
+    : `<div class="acts"><button class="btn primary sm" onclick="event.stopPropagation();startTask('${t.id}')">Iniciar tarea</button>${t.assigned_by_admin ? '' : `<button class="btn sm" onclick="event.stopPropagation();releaseTask('${t.id}')">Devolver al pool</button>`}</div>`;
+  return `<h1>Mis tareas</h1>
+    ${mine.length ? `<div class="rail"></div>${mine.map(t => ticket(t, acts(t))).join('')}` : empty('No tienes tareas en curso', 'Toma una del pool o espera a que el administrador te asigne una.')}
+    ${done.length ? `<h2>Completadas</h2>${done.map(t => ticket(t)).join('')}` : ''}`;
+}
+
+/* --- recetas (compartido) --- */
+function recView(){
+  if (ui.recipeId){
+    const r = RECIPES.find(x => x.id === ui.recipeId);
+    return `<button class="btn sm" style="margin-top:16px" onclick="ui.recipeId=null;render()">Todas las recetas</button>
+      <h1 style="margin-top:14px">${esc(r.name)}</h1><p class="lead">${esc(r.yield)}</p>
+      <h2 style="margin-top:6px">Ingredientes</h2><ul class="ing">${r.ingredients.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+      <label class="check"><input type="checkbox" ${ui.speed > 1 ? 'checked' : ''} onchange="ui.speed=this.checked?30:1;render()"><span>Acelerar temporizadores ×30<br><span class="hint">Solo para la demostración.</span></span></label>
+      <h2>Preparación</h2>
+      <ol class="steps">${r.steps.map((s, si) => { const k = r.id + '-' + si;
+        return `<li class="${ui.steps[k] ? 'done' : ''}"><div>
+          <button class="st-ck" aria-pressed="${!!ui.steps[k]}" onclick="toggleStep('${k}')"><p class="st-text">${esc(s.text)}</p></button>
+          ${s.timers.map((tm, ti) => { const key = r.id + '.' + si + '.' + ti; const st = tmGet(key, tm.seconds, tm.label + ' — ' + r.name);
+            const txt = st.running ? 'Pausar' : st.rem <= 0 ? 'Reiniciar' : st.rem < st.total ? 'Seguir' : 'Iniciar';
+            return `<div class="tm" data-tm="${key}"><div class="tm-l"><span>${esc(tm.label)}</span><b class="tm-t">${mmss(st.rem)}</b></div>
+              <div class="acts" style="margin:0"><button class="btn sm primary" onclick="toggleTimer('${key}',${tm.seconds},'${esc(tm.label).replace(/'/g, '')}')">${txt}</button>${st.rem < st.total ? `<button class="btn sm" onclick="resetTimer('${key}')">Reiniciar</button>` : ''}</div>
+              <div class="tm-bar"><i style="width:${100 * (1 - st.rem / st.total)}%"></i></div></div>`; }).join('')}
+        </div></li>`; }).join('')}</ol>`;
+  }
+  return `<h1>Recetas</h1><p class="lead">Cada paso puede llevar sus propios temporizadores, que siguen corriendo mientras usas otras pantallas.</p>
+    <ul class="rows">${RECIPES.map(r => { const n = r.steps.reduce((a, s) => a + s.timers.length, 0), tot = r.steps.reduce((a, s) => a + s.timers.reduce((b, t) => b + t.seconds, 0), 0);
+      return `<li><button class="row login-row" onclick="openRecipe('${r.id}')"><span class="grow"><b style="font:600 22px/1.1 var(--font-display)">${esc(r.name)}</b><span class="muted">${r.steps.length} pasos, ${n} temporizadores, ${dur(tot * 1000)} de tiempos</span></span><span class="muted">${ic('chev')}</span></button></li>`; }).join('')}</ul>`;
+}
+
+/* ======================= HOJAS (sheets) ======================= */
+function openTask(id){ ui.sheet = { type:'task', id }; render(); focusSheet(); }
+function openSheet(type){ ui.sheet = { type }; render(); focusSheet(); }
+function closeSheet(){ ui.sheet = null; ui.finish = null; render(); }
+function focusSheet(){ const el = document.querySelector('.sheet'); if (el) el.focus(); }
+
+function taskSheet(t){
+  const u = me(), isAdmin = u.role === 'admin', done = t.status === 'completed';
+  const ev = S.events.filter(e => e.task_id === t.id).slice(0, 8);
+  const stateTxt = done ? 'Completada' : t.status === 'pending' ? 'Pendiente (en el pool)' : 'Tomada';
+  const asg = t.assigned_to ? user(t.assigned_to)?.name : 'Sin asignar';
+  const c = t.checkin;
+  let actions = '';
+  if (isAdmin){
+    actions = ui.sheet.confirm
+      ? `<p class="err" style="margin-top:18px">¿Eliminar esta tarea? No se puede deshacer.</p><div class="btnrow"><button class="btn danger" onclick="deleteTask('${t.id}')">Eliminar tarea</button><button class="btn" onclick="ui.sheet.confirm=false;render()">Cancelar</button></div>`
+      : `<div class="btnrow" style="margin-top:18px">${done ? '' : `<button class="btn primary" onclick="editTask('${t.id}')">Editar</button>`}<button class="btn" onclick="askDelete()">Eliminar</button></div>`;
+  }
+  return `<div class="sh-head"><span class="pb ${done ? 'ok' : 'p' + t.effective_priority}">${done ? ic('check', 26) : t.effective_priority}</span><button class="btn sm" onclick="closeSheet()">Cerrar</button></div>
+    <h2>${esc(t.title)}</h2>
+    ${t.description ? `<p>${esc(t.description)}</p>` : '<p class="muted">Sin descripción.</p>'}
+    <div style="margin-top:14px">
+      <div class="kv"><span>Área</span><b>${esc(t.area)}</b></div>
+      <div class="kv"><span>Frecuencia</span><b>${FREQ[t.frequency]}</b></div>
+      <div class="kv"><span>Estado</span><b>${stateTxt}</b></div>
+      <div class="kv"><span>Asignada a</span><b>${esc(asg)}</b></div>
+      <div class="kv"><span>Prioridad</span><b>${t.effective_priority === t.base_priority ? t.base_priority + ' de 5' : `${t.effective_priority} (base ${t.base_priority})`}</b></div>
+      <div class="kv"><span>Fecha límite</span><b>${fmtDT(t.due_at)}</b></div>
+      <div class="kv"><span>Foto</span><b>${t.photo_required ? 'Obligatoria' : 'Opcional'}</b></div>
+      <div class="kv"><span>Origen</span><b>${t.source === 'inventory' ? 'Job de caducidad' : 'Creada por el admin'}</b></div>
+    </div>
+    ${c ? `<h3>Comprobación</h3>
+      <div class="kv"><span>Inicio</span><b>${fmtT(c.started_at)}</b></div>
+      <div class="kv"><span>Fin</span><b>${c.ended_at ? fmtT(c.ended_at) : 'En curso'}</b></div>
+      ${c.ended_at ? `<div class="kv"><span>Duración</span><b>${dur(c.ended_at - c.started_at)}</b></div>` : ''}
+      ${c.photo ? `<img class="shot" src="${c.photo}" alt="Foto de comprobación">` : ''}
+      ${c.notes ? `<p class="note">${esc(c.notes)}</p>` : ''}` : ''}
+    ${ev.length ? `<h3>Historial</h3><ul class="log">${ev.map(e => `<li class="ev-${e.type}"><time>${fmtT(e.at)}</time><span>${esc(e.text)}</span></li>`).join('')}</ul>` : ''}
+    ${actions}`;
+}
+function finishSheet(t){
+  const f = ui.finish;
+  return `<div class="sh-head"><h2 style="margin:6px 0 0">Finalizar tarea</h2><button class="btn sm" onclick="closeSheet()">Cancelar</button></div>
+    <p class="muted" style="margin-bottom:16px">${esc(t.title)}</p>
+    <div class="field"><span class="lbl">Foto${t.photo_required ? '<span class="req">obligatoria</span>' : ' (opcional)'}</span>
+      ${f.photo ? `<img class="shot" src="${f.photo}" alt="Foto adjunta">` : ''}
+      <div class="btnrow"><label class="btn sm">${ic('camera', 18)} ${f.photo ? 'Cambiar foto' : 'Tomar foto'}<input class="vh" type="file" accept="image/*" capture="environment" onchange="pickPhoto(this)"></label>
+      <button class="btn sm" onclick="samplePhoto()">Usar foto de muestra</button></div>
+      ${f.err ? `<p class="err" role="alert">${f.err}</p>` : ''}</div>
+    <div class="field"><label for="f-notes">Notas</label><textarea id="f-notes" rows="3" oninput="ui.finish.notes=this.value" placeholder="Algo que deba saber el siguiente turno">${esc(f.notes)}</textarea></div>
+    <button class="btn primary block" onclick="finishTask('${t.id}')">Marcar como completada</button>`;
+}
+function demoSheet(){
+  const la = ui.lastAdvance;
+  return `<div class="sh-head"><h2 style="margin:6px 0 0">Panel de demostración</h2><button class="btn sm" onclick="closeSheet()">Cerrar</button></div>
+    <p class="lead" style="margin-top:8px">Reloj simulado: <b style="color:var(--tinta)">${fmtDT(now())}</b></p>
+    <div class="btnrow"><button class="btn sm primary" onclick="advance(30*M,'30 min')">+30 min</button><button class="btn sm primary" onclick="advance(H,'1 h')">+1 h</button><button class="btn sm primary" onclick="advance(4*H,'4 h')">+4 h</button><button class="btn sm primary" onclick="advance(D,'1 día')">+1 día</button></div>
+    <p class="hint">El cron corre cada 5 minutos simulados. Último ciclo: ${fmtT(S.lastCron)}.</p>
+    ${la ? `<h3>Tras avanzar ${esc(la.label)}</h3>${la.changes.length ? `<ul class="log">${la.changes.slice(0, 8).map(e => `<li class="ev-${e.type}"><time>${fmtT(e.at)}</time><span>${esc(e.text)}</span></li>`).join('')}</ul>${la.changes.length > 8 ? `<p class="hint">Y ${la.changes.length - 8} cambios más en Actividad.</p>` : ''}` : '<p class="muted">No hubo cambios de prioridad.</p>'}` : ''}
+    <h3>Reglas de escalamiento</h3>
+    <div class="kv"><span>Menos de 24 h</span><b>base +1</b></div>
+    <div class="kv"><span>Menos de 4 h</span><b>base +2</b></div>
+    <div class="kv"><span>Menos de 1 h o vencida</span><b>prioridad 5</b></div>
+    <div class="kv"><span>Sentido</span><b>solo sube, tope en 5</b></div>
+    <h3>Simulaciones</h3>
+    <div class="btnrow"><button class="btn sm" onclick="closeSheet();simColleague()">Un compañero toma la tarea más urgente del pool</button></div>
+    <h3>Datos</h3>
+    <div class="btnrow"><button class="btn sm" onclick="resetDemo()">Reiniciar demo</button></div>`;
+}
+function meSheet(){
+  const u = me(), sp = u.role === 'admin' ? 'todos los espacios' : space(u.space_id).name;
+  return `<div class="sh-head"><h2 style="margin:6px 0 0">${esc(u.name)}</h2><button class="btn sm" onclick="closeSheet()">Cerrar</button></div>
+    <div style="margin-top:14px"><div class="kv"><span>Rol</span><b>${u.role === 'admin' ? 'Administrador' : 'Empleado'}</b></div>
+    <div class="kv"><span>Puesto</span><b>${esc(u.title)}</b></div>
+    <div class="kv"><span>Acceso a</span><b>${esc(sp)}</b></div>
+    <div class="kv"><span>Ruta</span><b>${u.role === 'admin' ? '/admin' : '/staff'}</b></div></div>
+    <div class="btnrow" style="margin-top:18px"><button class="btn" onclick="logout()">Cambiar de usuario</button></div>`;
+}
+function sheetView(){
+  const s = ui.sheet; let body = '';
+  if (s.type === 'task'){ const t = task(s.id); if (!t){ ui.sheet = null; return ''; } body = taskSheet(t); }
+  else if (s.type === 'finish'){ const t = task(s.id); if (!t || !ui.finish){ ui.sheet = null; return ''; } body = finishSheet(t); }
+  else if (s.type === 'demo') body = demoSheet();
+  else if (s.type === 'me') body = meSheet();
+  return `<div class="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-modal="true" tabindex="-1">${body}</div></div>`;
+}
+
+/* ======================= RENDER ======================= */
+function render(){
+  const y = window.scrollY;
+  const u = me();
+  document.getElementById('app').innerHTML = u ? shell(u) : loginView();
+  document.getElementById('sheet').innerHTML = ui.sheet && u ? sheetView() : '';
+  document.documentElement.classList.toggle('lock', !!(ui.sheet && u));
+  window.scrollTo(0, y);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
+
+function tick(){
+  const p = runEngine(now());
+  if (p.length) notifyPushes(p);
+  save();
+  if (!ui.userId || ui.sheet || ui.tab === 'new' || ui.invForm) return;
+  render();
+}
+
+if (!load()) seed();
+runEngine(now());
+render();
+setInterval(tick, 20000);
+</script>
+</body>
+</html>
